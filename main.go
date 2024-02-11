@@ -7,6 +7,7 @@ import (
 	"log"
 	"lumos-discord-bot/cmd"
 	"lumos-discord-bot/cmd/nox"
+	"lumos-discord-bot/handler"
 	"os"
 	"os/signal"
 )
@@ -21,7 +22,7 @@ func main() {
 		log.Printf(".env is not loaded")
 	}
 	discordToken := os.Getenv(EnvDiscordToken)
-	//welcomeChannel := os.Getenv(EnvWelcomeChannel)
+	welcomeChannel := os.Getenv(EnvWelcomeChannel)
 
 	bot, err := discordgo.New(fmt.Sprintf("Bot %s", discordToken))
 	if err != nil {
@@ -41,6 +42,9 @@ func main() {
 	cmds.Add(noxCmd)
 
 	bot.AddHandler(cmds.Handle)
+
+	welcome := handler.NewWelcomeHandler(welcomeChannel)
+	bot.AddHandler(welcome.Handle)
 
 	defer bot.Close()
 
