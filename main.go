@@ -26,7 +26,7 @@ var greetingMessages = []string{
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		panic(err)
+		log.Printf(".env is not loaded")
 	}
 	discordToken := os.Getenv(ENV_DISCORD_TOKEN)
 	//welcomeChannel := os.Getenv(ENV_WELCOME_CHANNEL)
