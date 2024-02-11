@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	ENV_DISCORD_TOKEN   = "DISCORD_TOKEN"
-	ENV_WELCOME_CHANNEL = "WELCOME_CHANNEL"
+	EnvDiscordToken   = "DISCORD_TOKEN"
+	EnvWelcomeChannel = "WELCOME_CHANNEL"
 )
 
 type Command struct {
@@ -28,8 +28,8 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf(".env is not loaded")
 	}
-	discordToken := os.Getenv(ENV_DISCORD_TOKEN)
-	//welcomeChannel := os.Getenv(ENV_WELCOME_CHANNEL)
+	discordToken := os.Getenv(EnvDiscordToken)
+	//welcomeChannel := os.Getenv(EnvWelcomeChannel)
 
 	bot, err := discordgo.New(fmt.Sprintf("Bot %s", discordToken))
 	if err != nil {
