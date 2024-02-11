@@ -9,6 +9,10 @@ type exec struct {
 	cmds map[string]SubCmd
 }
 
+func NewExec() *exec {
+	return &exec{}
+}
+
 func (c *exec) Add(i SubCmd) {
 	if c.cmds == nil {
 		c.cmds = make(map[string]SubCmd)
