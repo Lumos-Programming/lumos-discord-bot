@@ -18,6 +18,13 @@ func NewNoxCmd() NoxCmd {
 	return NoxCmd{}
 }
 
+func (n NoxCmd) Info() *discordgo.ApplicationCommand {
+	return &discordgo.ApplicationCommand{
+		Name:        "nox",
+		Description: "疲れたのかい？ならばnoxだ！",
+	}
+}
+
 func (n NoxCmd) Handle(
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
