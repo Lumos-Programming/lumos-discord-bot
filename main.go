@@ -6,6 +6,7 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"lumos-discord-bot/cmd"
+	del "lumos-discord-bot/cmd/delete"
 	"lumos-discord-bot/cmd/nox"
 	"lumos-discord-bot/handler"
 	"os"
@@ -41,6 +42,8 @@ func main() {
 
 	noxCmd := nox.NewNoxCmd()
 	cmds.Add(noxCmd)
+	deleteCmd := del.NewDeleteCmd()
+	cmds.Add(deleteCmd)
 
 	cmdHandler := cmds.Activate(bot)
 	defer cmdHandler.Deactivate()
