@@ -95,7 +95,7 @@ func main() {
 				Description: fmt.Sprintf("%s さんが退出します!  <@%s>", i.Member.User.Username, i.Member.User.ID),
 				Author: &discordgo.MessageEmbedAuthor{
 					Name:    name,
-					URL:     i.Member.User.AvatarURL(""),
+					URL:     fmt.Sprintf("https://discordapp.com/users/%s", i.Member.User.ID),
 					IconURL: i.Member.User.AvatarURL(""),
 				},
 			}
