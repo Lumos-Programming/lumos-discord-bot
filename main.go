@@ -83,6 +83,10 @@ func main() {
 			r := rand.Intn(len(greetingMessages))
 			greetMes := greetingMessages[r]
 
+			name := i.Member.Nick
+			if name == "" {
+				name = i.Member.User.Username
+			}
 			// create message to welcome channel
 			// first create embed message
 			mes := discordgo.MessageEmbed{
@@ -90,7 +94,7 @@ func main() {
 				Footer:      &discordgo.MessageEmbedFooter{Text: greetMes},
 				Description: fmt.Sprintf("%s さんが退出します!  <@%s>", i.Member.User.Username, i.Member.User.ID),
 				Author: &discordgo.MessageEmbedAuthor{
-					Name:    i.Member.Nick,
+					Name:    name,
 					URL:     i.Member.User.AvatarURL(""),
 					IconURL: i.Member.User.AvatarURL(""),
 				},
