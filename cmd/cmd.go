@@ -1,6 +1,9 @@
 package cmd
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+	"log"
+)
 
 type cmd struct {
 	e exec
@@ -13,6 +16,15 @@ type SubCmd interface {
 }
 
 func (c exec) Activate(s *discordgo.Session) cmd {
+	for _, v := range c.cmds {
+		if v.Info() == nil {
+			continue
+		}
+		_, err := s.ApplicationCommandCreate(s.State.User.ID, "", v.Info())
+		if err != nil {
+			log.Printf("failed to create command %s, err: %v", v.Info().Name, err)
+		}
+	}
 	d := s.AddHandler(c.Handle)
 	return cmd{e: c, d: &d}
 }
