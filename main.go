@@ -36,12 +36,15 @@ func main() {
 		panic(err)
 	}
 
+	// setup commands...
 	cmds := cmd.NewExec()
 
 	noxCmd := nox.NewNoxCmd()
 	cmds.Add(noxCmd)
 
-	bot.AddHandler(cmds.Handle)
+	cmdHandler := cmds.Activate(bot)
+	defer cmdHandler.Deactivate()
+	// setup commands end
 
 	welcome := handler.NewWelcomeHandler(welcomeChannel)
 	bot.AddHandler(welcome.Handle)
