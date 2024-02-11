@@ -7,6 +7,11 @@ type cmd struct {
 	d *func()
 }
 
+type SubCmd interface {
+	Handle(s *discordgo.Session, i *discordgo.InteractionCreate)
+	Info() *discordgo.ApplicationCommand
+}
+
 func (c exec) Activate(s *discordgo.Session) cmd {
 	d := s.AddHandler(c.Handle)
 	return cmd{e: c, d: &d}
