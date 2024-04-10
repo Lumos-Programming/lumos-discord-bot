@@ -29,6 +29,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	bot.Identify.Intents = discordgo.IntentsAll
+
 	bot.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
