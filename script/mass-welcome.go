@@ -1,42 +1,80 @@
-package handler
+package main
 
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
 	"log"
+	"os"
+	"sort"
+	"time"
 )
 
-type WelcomeHandler struct {
-	targetServer string
-	channel      string
-}
+const (
+	EnvDiscordToken   = "DISCORD_TOKEN"
+	EnvTargetServer   = "TARGET_SERVER"
+	EnvWelcomeChannel = "WELCOME_CHANNEL"
+)
 
-func NewWelcomeHandler(targetServer, channel string) WelcomeHandler {
-	return WelcomeHandler{
-		targetServer: targetServer,
-		channel:      channel,
+func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf(".env is not loaded")
+	}
+	discordToken := os.Getenv(EnvDiscordToken)
+	welcomeChannel := os.Getenv(EnvWelcomeChannel)
+	targetServer := os.Getenv(EnvTargetServer)
+
+	bot, err := discordgo.New(fmt.Sprintf("Bot %s", discordToken))
+	if err != nil {
+		panic(err)
+	}
+
+	bot.Identify.Intents = discordgo.IntentsAll
+
+	bot.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	})
+
+	members, err := bot.GuildMembers(targetServer, "", 1000)
+	if err != nil {
+		log.Printf("failed to get guild members, err: %v", err)
+		return
+	}
+	newMembers := make([]discordgo.Member, 0, len(members))
+	for _, user := range members {
+		if user.JoinedAt.Before(time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC)) {
+			continue
+		}
+		fmt.Printf("joined at: %v %v\n", user.JoinedAt, user.User.Username)
+		newMembers = append(newMembers, *user)
+	}
+	sort.Slice(newMembers, func(i, j int) bool {
+		return newMembers[i].JoinedAt.Before(newMembers[j].JoinedAt)
+	})
+	for _, m := range newMembers {
+		sendMassWelcomeMessages(bot, welcomeChannel, m)
+		sendWelcomeDM(bot, m.User.ID)
 	}
 }
 
-func (h WelcomeHandler) Handle(s *discordgo.Session, i *discordgo.GuildMemberAdd) {
+func sendMassWelcomeMessages(s *discordgo.Session, welcomeChannel string, m discordgo.Member) {
 	embedMes := discordgo.MessageEmbed{
 		Title:       "Lumosへようこそ!!!",
-		Description: fmt.Sprintf("<@%s> さんがLumosにやってきました:sparkles:", i.User.ID),
+		Description: fmt.Sprintf("<@%s> さんがLumosにやってきました:sparkles:", m.User.ID),
 		Color:       0xF1C40F,
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:    i.User.Username,
-			URL:     fmt.Sprintf("https://discordapp.com/users/%s", i.User.ID),
-			IconURL: i.User.AvatarURL(""),
+			Name:    m.User.Username,
+			URL:     fmt.Sprintf("https://discordapp.com/users/%s", m.User.ID),
+			IconURL: m.User.AvatarURL(""),
 		},
 	}
-	_, err := s.ChannelMessageSendEmbed(h.channel, &embedMes)
+	_, err := s.ChannelMessageSendEmbed(welcomeChannel, &embedMes)
 	if err != nil {
 		log.Printf("failed to send message, err: %v", err)
 	}
-	h.sendWelcomeDM(s, i.User.ID)
 }
 
-func (h WelcomeHandler) sendWelcomeDM(s *discordgo.Session, userID string) {
+func sendWelcomeDM(s *discordgo.Session, userID string) {
 	channel, err := s.UserChannelCreate(userID)
 	if err != nil {
 		log.Printf("failed to create dm channel, err: %v", err)
