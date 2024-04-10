@@ -7,11 +7,15 @@ import (
 )
 
 type WelcomeHandler struct {
-	channel string
+	targetServer string
+	channel      string
 }
 
-func NewWelcomeHandler(channel string) WelcomeHandler {
-	return WelcomeHandler{channel: channel}
+func NewWelcomeHandler(targetServer, channel string) WelcomeHandler {
+	return WelcomeHandler{
+		targetServer: targetServer,
+		channel:      channel,
+	}
 }
 
 func (h *WelcomeHandler) Handle(s *discordgo.Session, i *discordgo.GuildMemberAdd) {
