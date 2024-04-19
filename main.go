@@ -17,6 +17,7 @@ const (
 	EnvDiscordToken   = "DISCORD_TOKEN"
 	EnvTargetServer   = "TARGET_SERVER"
 	EnvWelcomeChannel = "WELCOME_CHANNEL"
+	EnvMemberRoleID   = "MEMBER_ROLE_ID"
 )
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 	discordToken := os.Getenv(EnvDiscordToken)
 	welcomeChannel := os.Getenv(EnvWelcomeChannel)
 	targetServer := os.Getenv(EnvTargetServer)
+	memberRoleID := os.Getenv(EnvMemberRoleID)
 
 	bot, err := discordgo.New(fmt.Sprintf("Bot %s", discordToken))
 	if err != nil {
@@ -54,7 +56,7 @@ func main() {
 	defer cmdHandler.Deactivate()
 	// setup commands end
 
-	welcome := handler.NewWelcomeHandler(targetServer, welcomeChannel)
+	welcome := handler.NewWelcomeHandler(targetServer, welcomeChannel, memberRoleID)
 	bot.AddHandler(welcome.Handle)
 
 	defer bot.Close()
