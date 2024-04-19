@@ -10,13 +10,15 @@ type WelcomeHandler struct {
 	targetServer string
 	channel      string
 	memberRoleID string
+	testUserID   string
 }
 
-func NewWelcomeHandler(targetServer, channel, memberRoleID string) WelcomeHandler {
+func NewWelcomeHandler(targetServer, channel, memberRoleID, testUserID string) WelcomeHandler {
 	return WelcomeHandler{
 		targetServer: targetServer,
 		channel:      channel,
 		memberRoleID: memberRoleID,
+		testUserID:   testUserID,
 	}
 }
 
@@ -40,6 +42,10 @@ func (h WelcomeHandler) Handle(s *discordgo.Session, i *discordgo.GuildMemberAdd
 }
 
 func (h WelcomeHandler) sendWelcomeDM(s *discordgo.Session, userID string) {
+	if userID == h.testUserID {
+		log.Println("skip sending welcome message to test user")
+		return
+	}
 	channel, err := s.UserChannelCreate(userID)
 	if err != nil {
 		log.Printf("failed to create dm channel, err: %v", err)
