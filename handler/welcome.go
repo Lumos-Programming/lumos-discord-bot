@@ -23,7 +23,11 @@ func NewWelcomeHandler(targetServer, channel, memberRoleID, testUserID string) W
 }
 
 func (h WelcomeHandler) Handle(s *discordgo.Session, i *discordgo.GuildMemberAdd) {
-	h.sendWelcomeGreetingServer(s, *i.User)
+	if i.User.ID != h.testUserID {
+		h.sendWelcomeGreetingServer(s, *i.User)
+	} else {
+		log.Println("skip sending welcome message to test user")
+	}
 	h.sendWelcomeDM(s, i.User.ID)
 	h.setMemberRole(s, i)
 }
@@ -48,10 +52,6 @@ func (h WelcomeHandler) sendWelcomeGreetingServer(s *discordgo.Session, u discor
 }
 
 func (h WelcomeHandler) sendWelcomeDM(s *discordgo.Session, userID string) {
-	if userID == h.testUserID {
-		log.Println("skip sending welcome message to test user")
-		return
-	}
 	channel, err := s.UserChannelCreate(userID)
 	if err != nil {
 		log.Printf("failed to create dm channel, err: %v\n", err)
