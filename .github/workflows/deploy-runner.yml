@@ -17,8 +17,8 @@ jobs:
           go-version: 1.21
       - name: Load credentials
         run: "echo ${{ secrets.ENV_CONTENT }} > .env"
-      - name: kill previous process
-        run: "ps aux | grep 'lumos-discord-bot' | awk '{print $2}' | xargs kill -9"
+#      - name: kill previous process
+#        run: "ps aux | grep 'lumos-discord-bot' | awk '{print $2}' | xargs kill -9"
       - name: Go Build
         run: go build -o lumos-discord-bot .
       - name: Run the bot in the background
