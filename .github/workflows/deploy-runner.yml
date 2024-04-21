@@ -23,7 +23,7 @@ jobs:
         run: go build -o lumos-discord-bot .
       - name: Run the bot in the background
         run: nohup ./lumos-discord-bot &
-        with:
+        env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           TARGET_SERVER: ${{ secrets.TARGET_SERVER }}
           WELCOME_CHANNEL: ${{ secrets.WELCOME_CHANNEL }}
