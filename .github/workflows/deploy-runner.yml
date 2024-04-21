@@ -8,7 +8,6 @@ jobs:
     runs-on:
       - self-hosted
       - Shion1305
-    environment: BotHostingProduction
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,3 +23,9 @@ jobs:
         run: go build -o lumos-discord-bot .
       - name: Run the bot in the background
         run: nohup ./lumos-discord-bot &
+        with:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          TARGET_SERVER: ${{ secrets.TARGET_SERVER }}
+          WELCOME_CHANNEL: ${{ secrets.WELCOME_CHANNEL }}
+          MEMBER_ROLE_ID: ${{ secrets.MEMBER_ROLE_ID }}
+          TEST_USER_ID: ${{ secrets.TEST_USER_ID }}
