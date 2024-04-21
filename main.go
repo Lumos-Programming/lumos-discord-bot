@@ -23,7 +23,7 @@ const (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Printf(".env is not loaded")
+		log.Printf(".env file not found")
 	}
 	discordToken := os.Getenv(EnvDiscordToken)
 	welcomeChannel := os.Getenv(EnvWelcomeChannel)
