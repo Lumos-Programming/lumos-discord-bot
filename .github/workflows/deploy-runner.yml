@@ -3,29 +3,35 @@ on:
   push:
     branches:
       - main
+	pull_request:
+		branches:
+			- main
+		paths:
+			- '.github/workflows/deploy-runner.yml'
 jobs:
   deploy:
     runs-on:
       - self-hosted
-      - Shion1305
+      - Shion-raspi-cm4
+      - ARM64
+      - Linux
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.21
-      - name: Load credentials
-        run: "echo ${{ secrets.ENV_CONTENT }} > .env"
-#      - name: kill previous process
-#        run: "ps aux | grep 'lumos-discord-bot' | awk '{print $2}' | xargs kill -9"
-      - name: Go Build
+          go-version: '1.21'
+
+      - name: Build binary
         run: go build -o lumos-discord-bot .
-      - name: Run the bot in the background
-        run: nohup ./lumos-discord-bot &
-        env:
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          TARGET_SERVER: ${{ secrets.TARGET_SERVER }}
-          WELCOME_CHANNEL: ${{ secrets.WELCOME_CHANNEL }}
-          MEMBER_ROLE_ID: ${{ secrets.MEMBER_ROLE_ID }}
-          TEST_USER_ID: ${{ secrets.TEST_USER_ID }}
+
+      - name: Deploy binary
+        run: |
+          cp lumos-discord-bot /home/lumos-bot/lumos-discord-bot/lumos-discord-bot
+
+      - name: Restart service
+        run: |
+        	# THIS COMMAND IS ALLOWED VIA /etc/sudoers.d/lumos-bot
+        	sudo /bin/systemctl restart lumos-discord-bot.service
