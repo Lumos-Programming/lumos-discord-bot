@@ -26,6 +26,8 @@ jobs:
         run: go build -o lumos-discord-bot .
       - name: Deploy binary
         run: |
+          # THIS COMMAND IS ALLOWED VIA /etc/sudoers.d/lumos-bot
+          sudo /bin/systemctl stop lumos-discord-bot.service
           cp lumos-discord-bot /home/lumos-bot/lumos-discord-bot/lumos-discord-bot
       - name: Restart service
         run: |
