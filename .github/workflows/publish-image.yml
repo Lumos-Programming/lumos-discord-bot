@@ -22,10 +22,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Format repo slug
+        uses: actions/github-script@v4
+        id: repo_slug
+        with:
+          result-encoding: string
+          script: return `ghcr.io/${github.repository.toLowerCase()}`
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: "ghcr.io/${{ github.repository_owner }}/lumos-discord-bot:latest"
+          tags: "ghcr.io/lumos-programming/lumos-discord-bot:latest"
