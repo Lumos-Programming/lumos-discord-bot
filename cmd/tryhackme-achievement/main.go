@@ -18,12 +18,12 @@ const (
 
 // TryHackMeCmd encapsulates all logic for the `/share` command.
 type TryHackMeCmd struct {
-	GuildID string
+	GuildID, channelID string
 }
 
 // NewTryHackMeCmd returns a new command handler.
-func NewTryHackMeCmd(guildID string) *TryHackMeCmd {
-	return &TryHackMeCmd{GuildID: guildID}
+func NewTryHackMeCmd(guildID, chanID string) *TryHackMeCmd {
+	return &TryHackMeCmd{GuildID: guildID, channelID: chanID}
 }
 
 // RegisterCommand registers/updates the slash-command every time the bot becomes READY.
@@ -43,12 +43,22 @@ func (c *TryHackMeCmd) RegisterCommand(s *discordgo.Session) error {
 // It processes both the slash-command invocation and the modal submit event.
 func (c *TryHackMeCmd) Handle(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.Type {
-
 	case discordgo.InteractionApplicationCommand:
 		if i.ApplicationCommandData().Name != cmdName {
 			return
 		}
-
+		if i.ChannelID != c.channelID {
+			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "このコマンドはこのチャンネルでは使用できません。",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			}); err != nil {
+				log.Printf("tryhackme: respond error: %v", err)
+			}
+			return
+		}
 		// Send modal
 		modal := &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseModal,
