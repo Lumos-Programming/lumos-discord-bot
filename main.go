@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	EnvDiscordToken   = "DISCORD_TOKEN"
-	EnvTargetServer   = "TARGET_SERVER"
-	EnvWelcomeChannel = "WELCOME_CHANNEL"
-	EnvMemberRoleID   = "MEMBER_ROLE_ID"
-	EnvTestUserID     = "TEST_USER_ID"
+	EnvDiscordToken       = "DISCORD_TOKEN"
+	EnvTargetServer       = "TARGET_SERVER"
+	EnvWelcomeChannel     = "WELCOME_CHANNEL"
+	EnvMemberRoleID       = "MEMBER_ROLE_ID"
+	EnvTestUserID         = "TEST_USER_ID"
+	EnvTHMAchievementChan = "TRYHACKME_ACHIEVEMENT_CHANNEL_ID"
 )
 
 func main() {
@@ -31,6 +32,7 @@ func main() {
 	targetServer := os.Getenv(EnvTargetServer)
 	memberRoleID := os.Getenv(EnvMemberRoleID)
 	testUserID := os.Getenv(EnvTestUserID)
+	thmAchievementChannelID := os.Getenv(EnvTHMAchievementChan)
 
 	bot, err := discordgo.New(fmt.Sprintf("Bot %s", discordToken))
 	if err != nil {
@@ -54,7 +56,7 @@ func main() {
 	cmds.Add(noxCmd)
 	deleteCmd := del.NewDeleteCmd()
 	cmds.Add(deleteCmd)
-	tryhackmeAchievementCmd := tryhackme_achievement.NewTryHackMeCmd(targetServer)
+	tryhackmeAchievementCmd := tryhackme_achievement.NewTryHackMeCmd(targetServer, thmAchievementChannelID)
 	cmds.Add(tryhackmeAchievementCmd)
 
 	cmdHandler := cmds.Activate(bot)
