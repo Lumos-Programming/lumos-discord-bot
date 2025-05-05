@@ -8,6 +8,7 @@ import (
 	"lumos-discord-bot/cmd"
 	del "lumos-discord-bot/cmd/delete"
 	"lumos-discord-bot/cmd/nox"
+	tryhackme_achievement "lumos-discord-bot/cmd/tryhackme-achievement"
 	"lumos-discord-bot/handler"
 	"os"
 	"os/signal"
@@ -53,6 +54,8 @@ func main() {
 	cmds.Add(noxCmd)
 	deleteCmd := del.NewDeleteCmd()
 	cmds.Add(deleteCmd)
+	tryhackmeAchievementCmd := tryhackme_achievement.NewTryHackMeCmd(targetServer)
+	cmds.Add(tryhackmeAchievementCmd)
 
 	cmdHandler := cmds.Activate(bot)
 	defer cmdHandler.Deactivate()

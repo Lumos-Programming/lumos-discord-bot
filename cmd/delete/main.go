@@ -113,3 +113,7 @@ func (n DeleteCmd) Handle(
 		return
 	}
 }
+
+func (n DeleteCmd) ModalCustomIDs() []string {
+	return []string{}
+}
