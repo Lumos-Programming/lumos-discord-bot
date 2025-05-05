@@ -65,3 +65,7 @@ func (n NoxCmd) Handle(
 		log.Printf("failed to send followup message, err: %v", err)
 	}
 }
+
+func (n NoxCmd) ModalCustomIDs() []string {
+	return []string{}
+}

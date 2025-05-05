@@ -13,6 +13,7 @@ type cmd struct {
 type SubCmd interface {
 	Handle(s *discordgo.Session, i *discordgo.InteractionCreate)
 	Info() *discordgo.ApplicationCommand
+	ModalCustomIDs() []string
 }
 
 func (c exec) Activate(s *discordgo.Session) cmd {
