@@ -27,7 +27,11 @@ jobs:
         id: repo_slug
         with:
           result-encoding: string
-          script: return `ghcr.io/${github.repository.toLowerCase()}`
+          script: return `ghcr.io/${context.repo.owner.toLowerCase()}/${context.repo.repo.toLowerCase()}`
+
+      - name: Echo repository slug
+        run: |
+          echo "Repository slug: ${{ steps.repo_slug.outputs.result }}"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
