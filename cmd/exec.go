@@ -26,17 +26,24 @@ func (c *exec) Add(i SubCmd) {
 }
 
 func (c *exec) Handle(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var name string
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
-		name = i.ApplicationCommandData().Name
+		name := i.ApplicationCommandData().Name
+		if h, ok := c.cmds[name]; ok {
+			h.Handle(s, i)
+		} else {
+			log.Printf("unknown command: %s", name)
+		}
+		return
 	case discordgo.InteractionModalSubmit:
-		name = i.ModalSubmitData().CustomID
-	}
-
-	if h, ok := c.cmds[name]; ok {
-		h.Handle(s, i)
-	} else {
-		log.Printf("unknown command: %s", name)
+		customID := i.ModalSubmitData().CustomID
+		if h, ok := c.modals[customID]; ok {
+			h.Handle(s, i)
+		} else {
+			log.Printf("unknown modal: %s", customID)
+		}
+		return
+	default:
+		log.Printf("unhandled interaction, type: %s, id: %s", i.Type, i.ID)
 	}
 }

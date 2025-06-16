@@ -10,7 +10,7 @@ import (
 
 const (
 	cmdName    = "tryhackme-share"
-	modalID    = "tryhackme-share"
+	modalID    = "tryhackme-share-form"
 	titleID    = "challenge_title"
 	urlID      = "challenge_url"
 	commentsID = "comments"
