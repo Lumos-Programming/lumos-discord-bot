@@ -39,4 +39,4 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: "ghcr.io/lumos-programming/lumos-discord-bot:latest"
+          tags: ${{ steps.repo_slug.outputs.result }}:latest
