@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"strings"
 )
 
 type exec struct {
@@ -22,7 +23,7 @@ func (c *exec) Add(i SubCmd) {
 	for _, cid := range i.ModalCustomIDs() {
 		c.modals[cid] = i
 	}
-	log.Println("added command: ", i.Info().Name)
+	log.Println("Added command: ", i.Info().Name)
 }
 
 func (c *exec) Handle(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -32,18 +33,34 @@ func (c *exec) Handle(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if h, ok := c.cmds[name]; ok {
 			h.Handle(s, i)
 		} else {
-			log.Printf("unknown command: %s", name)
+			log.Printf("Unknown command: %s", name)
 		}
-		return
 	case discordgo.InteractionModalSubmit:
 		customID := i.ModalSubmitData().CustomID
 		if h, ok := c.modals[customID]; ok {
 			h.Handle(s, i)
 		} else {
-			log.Printf("unknown modal: %s", customID)
+			log.Printf("Unknown modal: %s", customID)
 		}
-		return
+	case discordgo.InteractionMessageComponent:
+		customID := i.MessageComponentData().CustomID
+		for name, h := range c.cmds {
+			if strings.HasPrefix(customID, name+"-") {
+				log.Printf("Routing component to command: %s", name)
+				h.Handle(s, i)
+				return
+			}
+		}
+		log.Printf("Unknown component: %s", customID)
+		if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "エラー：不明なボタン操作です。",
+			},
+		}); err != nil {
+			log.Printf("Failed to respond to unknown component: %v", err)
+		}
 	default:
-		log.Printf("unhandled interaction, type: %s, id: %s", i.Type, i.ID)
+		log.Printf("Unhandled interaction type: %s, ID: %s", i.Type, i.ID)
 	}
 }
