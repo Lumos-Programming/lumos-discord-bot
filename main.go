@@ -2,16 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 	"log"
 	"lumos-discord-bot/cmd"
 	del "lumos-discord-bot/cmd/delete"
 	"lumos-discord-bot/cmd/nox"
+	"lumos-discord-bot/cmd/reminder"
 	tryhackme_achievement "lumos-discord-bot/cmd/tryhackme-achievement"
 	"lumos-discord-bot/handler"
 	"os"
 	"os/signal"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -58,6 +60,8 @@ func main() {
 	cmds.Add(deleteCmd)
 	tryhackmeAchievementCmd := tryhackme_achievement.NewTryHackMeCmd(targetServer, thmAchievementChannelID)
 	cmds.Add(tryhackmeAchievementCmd)
+	reminderCmd := reminder.NewReminderCmd()
+	cmds.Add(reminderCmd)
 
 	cmdHandler := cmds.Activate(bot)
 	defer cmdHandler.Deactivate()
