@@ -21,7 +21,8 @@ const (
 	aYear   = aDay * 365
 )
 
-var reminders sync.Map // map[string]ReminderInfo for temporary storage
+var reminders sync.Map      // map[string]ReminderInfo for temporary storage
+var reminderStatus sync.Map // map[string]bool for execute
 
 type ReminderCmd struct{}
 
@@ -52,3 +53,9 @@ func (n *ReminderCmd) Info() *discordgo.ApplicationCommand {
 func (n *ReminderCmd) ModalCustomIDs() []string {
 	return []string{modalID}
 }
+
+//Readyイベントの受け取り方が分からない
+//func (n *ReminderCmd) readyHandler(i *discordgo.Ready) {
+//	log.Printf("ReminderCmd.HandleReady for user %s", i.User.ID)
+//	n.RemindChecker()
+//}

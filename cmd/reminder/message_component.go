@@ -31,7 +31,7 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 	}
 
 	parts := strings.Split(customID, "-")
-	if len(parts) != 5 {
+	if len(parts) != 4 {
 		log.Printf("Malformed button customID: %s for user %s", customID, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "エラー：無効なボタン操作です。2",
@@ -42,8 +42,8 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 		return
 	}
 
-	id := strings.Join(parts[:4], "-") // reminder-YYYYMMDD-HHMM-RAND
-	action := parts[4]
+	id := strings.Join(parts[:3], "-") // reminder-YYYYMMDDHHMM-RAND
+	action := parts[3]
 	infoI, ok := reminders.Load(id)
 	if !ok {
 		log.Printf("No reminder data found for customID: %s for user %s", id, i.Member.User.ID)
@@ -65,6 +65,8 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 	} else if action == "confirm" {
 		// Simulate DB save (log for now as DB is not ready)
 		log.Printf("Saving to DB for user %s: %+v", i.Member.User.ID, info)
+		reminderStatus.Store(id, false)
+		log.Printf("Saved to reminderStatus for user %s: %+v", i.Member.User.ID, info)
 		reminders.Delete(id)
 		response = "リマインダーを確定しました。"
 		log.Printf("Confirmed reminder with customID: %s for user %s", id, i.Member.User.ID)

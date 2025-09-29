@@ -48,8 +48,7 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 	}
 
 	// Generate custom ID
-	now := time.Now()                      //未修正：リマインダーを設定した日の日付ではなく、リマインダー対象のイベントの日付にしたい
-	dateStr := now.Format("20060102-1504") // YYYYMMDD-HHMM
+	dateStr := rmdInfo.eventYear + rmdInfo.eventTime // YYYYMMDDHHMM
 	randNum := rand.Intn(10000)
 	randStr := fmt.Sprintf("%04d", randNum)
 	customID := fmt.Sprintf("reminder-%s-%s", dateStr, randStr)
