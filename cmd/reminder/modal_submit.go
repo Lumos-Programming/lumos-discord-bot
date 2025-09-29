@@ -3,7 +3,6 @@ package reminder
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"strconv"
 	"time"
 
@@ -48,12 +47,8 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 	}
 
 	// Generate custom ID
-	now := time.Now()                      //未修正：リマインダーを設定した日の日付ではなく、リマインダー対象のイベントの日付にしたい
-	dateStr := now.Format("20060102-1504") // YYYYMMDD-HHMM
-	randNum := rand.Intn(10000)
-	randStr := fmt.Sprintf("%04d", randNum)
-	customID := fmt.Sprintf("reminder-%s-%s", dateStr, randStr)
-	reminders.Store(customID, rmdInfo)
+	customID := rmdInfo.generateCustomID()
+	repository.HoldInfo(customID, rmdInfo)
 	log.Printf("Stored reminder with customID: %s for user %s", customID, i.Member.User.ID)
 
 	// Send confirmation message with buttons

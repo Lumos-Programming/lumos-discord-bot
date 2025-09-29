@@ -1,11 +1,11 @@
 package reminder
 
 import (
+	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"log"
 	"sync"
 	"time"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 const (
@@ -21,11 +21,32 @@ const (
 	aYear   = aDay * 365
 )
 
-var reminders sync.Map // map[string]ReminderInfo for temporary storage
+var repository ReminderRepository
+
+type ReminderRepository struct {
+	reminders      sync.Map
+	reminderStatus sync.Map
+}
+
+func (r *ReminderRepository) HoldInfo(key string, data ReminderInfo) {
+	r.reminders.Store(key, data)
+}
+
+func (r *ReminderRepository) StoreInfo(key string, data ReminderInfoExec) {
+	r.reminderStatus.Store(key, data)
+}
+
+func (r *ReminderRepository) Load(key string) (ReminderInfo, error) {
+	if v, ok := r.reminders.Load(key); ok {
+		return v.(ReminderInfo), nil
+	}
+	return ReminderInfo{}, fmt.Errorf("not found")
+}
 
 type ReminderCmd struct{}
 
 func NewReminderCmd() *ReminderCmd {
+	repository.RemindChecker()
 	return &ReminderCmd{}
 }
 
