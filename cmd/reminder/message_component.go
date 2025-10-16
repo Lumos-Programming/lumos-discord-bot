@@ -31,7 +31,7 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 	}
 
 	parts := strings.Split(customID, "-")
-	if len(parts) != 5 {
+	if len(parts) != 4 {
 		log.Printf("Malformed button customID: %s for user %s", customID, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "エラー：無効なボタン操作です。2",
@@ -42,10 +42,10 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 		return
 	}
 
-	id := strings.Join(parts[:4], "-") // reminder-YYYYMMDD-HHMM-RAND
-	action := parts[4]
-	infoI, ok := reminders.Load(id)
-	if !ok {
+	id := strings.Join(parts[:3], "-") // reminder-YYYYMMDDHHMM-RAND
+	action := parts[3]
+	info, err := repository.Load(id)
+	if err != nil {
 		log.Printf("No reminder data found for customID: %s for user %s", id, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "エラー：リマインダーデータが見つかりません。",
@@ -56,16 +56,17 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 		return
 	}
 
-	info := infoI.(ReminderInfo)
 	var response string
 	if action == "cancel" {
-		reminders.Delete(id)
+		repository.reminders.Delete(id)
 		response = "リマインダーの設定をキャンセルしました。"
 		log.Printf("Cancelled reminder with customID: %s for user %s", id, i.Member.User.ID)
 	} else if action == "confirm" {
 		// Simulate DB save (log for now as DB is not ready)
-		log.Printf("Saving to DB for user %s: %+v", i.Member.User.ID, info)
-		reminders.Delete(id)
+		infoexec := infoToExec(info)
+		log.Printf("Saving to DB for user %s: {title:%s eventTime:%s triggerTime:%s executed:%t}", i.Member.User.ID, infoexec.title, infoexec.eventTime.String(), infoexec.triggerTime.String(), infoexec.executed)
+		repository.StoreInfo(id, infoexec)
+		repository.reminders.Delete(id)
 		response = "リマインダーを確定しました。"
 		log.Printf("Confirmed reminder with customID: %s for user %s", id, i.Member.User.ID)
 	} else {
@@ -79,7 +80,7 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 		return
 	}
 
-	_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+	_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 		Content: response,
 	})
 	if err != nil {
