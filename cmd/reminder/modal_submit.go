@@ -36,6 +36,9 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 			}
 		}
 	}
+	rmdInfo.UserID = i.Member.User.ID
+	rmdInfo.ChannelID = i.ChannelID
+	rmdInfo.Session = s
 
 	// Validate input
 	err := rmdInfo.validate()
@@ -89,19 +92,50 @@ func (n *ReminderCmd) confirmEmbed(rmdInfo ReminderInfo, i *discordgo.Interactio
 	if name == "" {
 		name = i.Member.User.Username
 	}
+	eventYear := rmdInfo.eventYear
+	eventMonth := rmdInfo.eventTime[:2]
+	eventDay := rmdInfo.eventTime[2:4]
+	eventHour := rmdInfo.eventTime[4:6]
+	eventMinute := rmdInfo.eventTime[6:8]
 	return &discordgo.MessageEmbed{
 		Title:     "リマインダーのための情報を取得しました",
 		Color:     0xFAC6DA, // pink
 		Timestamp: time.Now().Format(time.RFC3339),
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "イベント名", Value: rmdInfo.title, Inline: false},
-			{Name: "開催年", Value: rmdInfo.eventYear, Inline: true},
-			{Name: "開催日時", Value: rmdInfo.eventTime, Inline: true},
-			{Name: "リマインダーのタイミング", Value: rmdInfo.setTime, Inline: false},
+			{Name: "開催日時", Value: eventYear + "/" + eventMonth + "/" + eventDay + " " + eventHour + ":" + eventMinute, Inline: false},
+			{Name: "リマインダーのタイミング", Value: invertSetTime(rmdInfo), Inline: false},
 		},
 		Footer: &discordgo.MessageEmbedFooter{
 			Text:    fmt.Sprintf("%s (@%s)", name, i.Member.User.Username),
 			IconURL: i.Member.User.AvatarURL("64"),
 		},
 	}
+}
+
+func invertSetTime(rmdInfo ReminderInfo) string {
+	message := ""
+	s := rmdInfo.setTime
+	i := 0
+	for i < len(s) {
+		for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+			message = message + s[i:i+1]
+			i++
+		}
+		unit := s[i]
+		i++
+		switch unit {
+		case 'w':
+			message += "週間"
+		case 'd':
+			message += "日"
+		case 'h':
+			message += "時間"
+		case 'm':
+			message += "分"
+		default:
+			return ""
+		}
+	}
+	return message + "前"
 }

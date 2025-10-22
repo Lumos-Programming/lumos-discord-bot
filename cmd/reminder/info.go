@@ -3,6 +3,7 @@ package reminder
 import (
 	"errors"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -14,12 +15,18 @@ type ReminderInfo struct {
 	eventYear string //YYYY
 	eventTime string //MMDDHHMM
 	setTime   string //e.g. '1h30m' (week: 'w', day: 'd', hour: 'h', minute: 'm')
+	UserID    string
+	ChannelID string
+	Session   *discordgo.Session
 }
 
 type ReminderInfoExec struct {
 	title       string
 	eventTime   time.Time
 	triggerTime time.Time
+	UserID      string
+	ChannelID   string
+	Session     *discordgo.Session
 	executed    bool
 }
 
@@ -35,6 +42,9 @@ func infoToExec(rmdinfo ReminderInfo) ReminderInfoExec {
 	var rmdexec ReminderInfoExec
 	rmdexec.title = rmdinfo.title
 	rmdexec.eventTime, rmdexec.triggerTime = rmdinfo.calTime()
+	rmdexec.UserID = rmdinfo.UserID
+	rmdexec.ChannelID = rmdinfo.ChannelID
+	rmdexec.Session = rmdinfo.Session
 	rmdexec.executed = false
 	return rmdexec
 }
