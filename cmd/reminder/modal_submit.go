@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -17,6 +18,8 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 	log.Printf("Processing modal submit for user %s", i.Member.User.ID)
 
 	var rmdInfo ReminderInfo
+	var rmdInfoExec ReminderInfoExec
+	var validErr error
 	for _, cmp := range i.ModalSubmitData().Components {
 		row := cmp.(*discordgo.ActionsRow)
 		for _, inner := range row.Components {
@@ -33,29 +36,39 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 				rmdInfo.eventTime = input.Value
 			case setID:
 				rmdInfo.setTime = input.Value
+
 			}
 		}
 	}
-	rmdInfo.UserID = i.Member.User.ID
-	rmdInfo.ChannelID = i.ChannelID
-	rmdInfo.Session = s
 
-	// Validate input
-	err := rmdInfo.validate()
-	if err != nil {
-		errorMsg := "正しい形式で入力してください: " + err.Error() // 未修正：ログではなく、モーダルに表示させたい
+	// Validate and caliculate input
+	rmdInfoExec.title = rmdInfo.title
+	rmdInfoExec.eventTime, rmdInfoExec.triggerTime, validErr = rmdInfo.validate()
+	if validErr != nil {
+		errorMsg := "正しい形式で入力してください: " + validErr.Error()
 		log.Printf("Validation failed for user %s: %s", i.Member.User.ID, errorMsg)
 		generateModal(errorMsg, rmdInfo)
 		return
 	}
+	rmdInfoExec.UserName = i.Member.Nick
+	if rmdInfoExec.UserName == "" {
+		rmdInfoExec.UserName = i.Member.User.GlobalName
+	}
+	if rmdInfoExec.UserName == "" {
+		rmdInfoExec.UserName = i.Member.User.Username
+	}
+	rmdInfoExec.UserID = i.Member.User.ID
+	rmdInfoExec.ChannelID = i.ChannelID
+	rmdInfoExec.Session = s
+	rmdInfoExec.executed = false
 
 	// Generate custom ID
 	customID := rmdInfo.generateCustomID()
-	repository.HoldInfo(customID, rmdInfo)
+	repository.HoldInfo(customID, rmdInfoExec)
 	log.Printf("Stored reminder with customID: %s for user %s", customID, i.Member.User.ID)
 
 	// Send confirmation message with buttons
-	embed := n.confirmEmbed(rmdInfo, i)
+	embed := n.confirmEmbed(rmdInfoExec, i)
 	cancelButton := discordgo.Button{
 		Label:    "キャンセル",
 		Style:    discordgo.SecondaryButton,
@@ -84,58 +97,50 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 
 }
 
-func (n *ReminderCmd) confirmEmbed(rmdInfo ReminderInfo, i *discordgo.InteractionCreate) *discordgo.MessageEmbed {
-	name := i.Member.Nick
-	if name == "" {
-		name = i.Member.User.GlobalName
-	}
-	if name == "" {
-		name = i.Member.User.Username
-	}
-	eventYear := rmdInfo.eventYear
-	eventMonth := rmdInfo.eventTime[:2]
-	eventDay := rmdInfo.eventTime[2:4]
-	eventHour := rmdInfo.eventTime[4:6]
-	eventMinute := rmdInfo.eventTime[6:8]
+func (n *ReminderCmd) confirmEmbed(rmdInfoExec ReminderInfoExec, i *discordgo.InteractionCreate) *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
 		Title:     "リマインダーのための情報を取得しました",
 		Color:     0xFAC6DA, // pink
 		Timestamp: time.Now().Format(time.RFC3339),
 		Fields: []*discordgo.MessageEmbedField{
-			{Name: "イベント名", Value: rmdInfo.title, Inline: false},
-			{Name: "開催日時", Value: eventYear + "/" + eventMonth + "/" + eventDay + " " + eventHour + ":" + eventMinute, Inline: false},
-			{Name: "リマインダーのタイミング", Value: invertSetTime(rmdInfo), Inline: false},
+			{Name: "イベント名", Value: rmdInfoExec.title, Inline: false},
+			{Name: "開催日時", Value: fmt.Sprintf("%s", rmdInfoExec.eventTime), Inline: false},
+			{Name: "リマインダーのタイミング", Value: invertSetTime(rmdInfoExec), Inline: false},
 		},
 		Footer: &discordgo.MessageEmbedFooter{
-			Text:    fmt.Sprintf("%s (@%s)", name, i.Member.User.Username),
+			Text:    fmt.Sprintf("%s", rmdInfoExec.UserName),
 			IconURL: i.Member.User.AvatarURL("64"),
 		},
 	}
 }
 
-func invertSetTime(rmdInfo ReminderInfo) string {
-	message := ""
-	s := rmdInfo.setTime
-	i := 0
-	for i < len(s) {
-		for i < len(s) && s[i] >= '0' && s[i] <= '9' {
-			message = message + s[i:i+1]
-			i++
-		}
-		unit := s[i]
-		i++
-		switch unit {
-		case 'w':
-			message += "週間"
-		case 'd':
-			message += "日"
-		case 'h':
-			message += "時間"
-		case 'm':
-			message += "分"
-		default:
-			return ""
-		}
+func invertSetTime(rmdInfoExec ReminderInfoExec) string {
+	stTime := rmdInfoExec.eventTime.Sub(rmdInfoExec.triggerTime)
+
+	totalHours := int(stTime.Hours())
+	weeks := totalHours / (24 * 7)
+	days := (totalHours % (24 * 7)) / 24
+	hours := totalHours % 24
+	minutes := int(stTime.Minutes()) % 60
+
+	var parts []string
+	if weeks > 0 {
+		parts = append(parts, fmt.Sprintf("%d週間", weeks))
 	}
-	return message + "前"
+	if days > 0 {
+		parts = append(parts, fmt.Sprintf("%d日", days))
+	}
+	if hours > 0 {
+		parts = append(parts, fmt.Sprintf("%d時間", hours))
+	}
+	if minutes > 0 {
+		parts = append(parts, fmt.Sprintf("%d分", minutes))
+	}
+
+	if len(parts) == 0 {
+		parts = append(parts, "0分")
+	}
+
+	result := strings.Join(parts, "")
+	return result + "前"
 }

@@ -63,9 +63,8 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 		log.Printf("Cancelled reminder with customID: %s for user %s", id, i.Member.User.ID)
 	} else if action == "confirm" {
 		// Simulate DB save (log for now as DB is not ready)
-		infoexec := infoToExec(info)
-		log.Printf("Saving to DB for user %s: {title:%s eventTime:%s triggerTime:%s executed:%t}", i.Member.User.ID, infoexec.title, infoexec.eventTime.String(), infoexec.triggerTime.String(), infoexec.executed)
-		repository.StoreInfo(id, infoexec)
+		log.Printf("Saving to DB for user %s: {title:%s eventTime:%s triggerTime:%s executed:%t}", i.Member.User.ID, info.title, info.eventTime.String(), info.triggerTime.String(), info.executed)
+		repository.StoreInfo(id, info)
 		repository.reminders.Delete(id)
 		response = "リマインダーを確定しました。"
 		log.Printf("Confirmed reminder with customID: %s for user %s", id, i.Member.User.ID)

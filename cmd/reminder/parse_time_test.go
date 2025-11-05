@@ -50,6 +50,14 @@ func Test_parseCustomDuration(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "100w2d3m",
+			args: args{
+				s: "100w2d3m",
+			},
+			want:    time.Hour*24*7*100 + time.Hour*24*2 + time.Minute*3,
+			wantErr: false,
+		},
+		{
 			name: "InvalidInput: h1",
 			args: args{
 				s: "h1",
