@@ -44,12 +44,6 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 	// Validate and caliculate input
 	rmdInfoExec.title = rmdInfo.title
 	rmdInfoExec.eventTime, rmdInfoExec.triggerTime, validErr = rmdInfo.validate()
-	if validErr != nil {
-		errorMsg := "正しい形式で入力してください: " + validErr.Error()
-		log.Printf("Validation failed for user %s: %s", i.Member.User.ID, errorMsg)
-		generateModal(errorMsg, rmdInfo)
-		return
-	}
 	rmdInfoExec.UserName = i.Member.Nick
 	if rmdInfoExec.UserName == "" {
 		rmdInfoExec.UserName = i.Member.User.GlobalName
@@ -64,6 +58,40 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 
 	// Generate custom ID
 	customID := rmdInfo.generateCustomID()
+
+	//Send error message and request correction
+	if validErr != nil {
+		errorMsg := validErr.Error()
+		log.Printf("Validation failed for user %s: %s", i.Member.User.ID, errorMsg)
+		embed := n.errorMessageEmbed(errorMsg)
+		resendButton := discordgo.Button{
+			Label:    "再入力",
+			Style:    discordgo.PrimaryButton,
+			CustomID: customID + "-resend",
+		}
+		cancelButton := discordgo.Button{
+			Label:    "キャンセル",
+			Style:    discordgo.SecondaryButton,
+			CustomID: customID + "-resendCancel",
+		}
+		if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: []*discordgo.MessageEmbed{embed},
+				Components: []discordgo.MessageComponent{
+					discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{cancelButton, resendButton},
+					},
+				},
+			},
+		}); err != nil {
+			log.Printf("reminder: Failed to send error message for user %s: %v", i.Member.User.ID, err)
+		} else {
+			log.Printf("Sent error message with buttons for user %s", i.Member.User.ID)
+		}
+		return
+	}
+
 	repository.HoldInfo(customID, rmdInfoExec)
 	log.Printf("Stored reminder with customID: %s for user %s", customID, i.Member.User.ID)
 
@@ -95,6 +123,17 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 		log.Printf("Sent confirmation message with buttons for user %s", i.Member.User.ID)
 	}
 
+}
+
+func (n *ReminderCmd) errorMessageEmbed(errMsg string) *discordgo.MessageEmbed {
+	return &discordgo.MessageEmbed{
+		Title: "入力を修正してください",
+		Color: 0xFAC6DA, // pink
+		//Timestamp: time.Now().Format(time.RFC3339),
+		Fields: []*discordgo.MessageEmbedField{
+			{Name: "エラー：", Value: errMsg, Inline: false},
+		},
+	}
 }
 
 func (n *ReminderCmd) confirmEmbed(rmdInfoExec ReminderInfoExec, i *discordgo.InteractionCreate) *discordgo.MessageEmbed {

@@ -22,7 +22,7 @@ func generateModal(errorMsg string, prevInfo ReminderInfo) *discordgo.Interactio
 	if errorMsg != "" {
 		modalTitle = errorMsg
 		if len(modalTitle) > 45 { // Discord modal title limit
-			modalTitle = modalTitle[:45]
+			modalTitle = modalTitle[:42] + "..."
 		}
 	}
 

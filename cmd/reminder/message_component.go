@@ -11,14 +11,6 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 	customID := i.MessageComponentData().CustomID
 	log.Printf("Processing button interaction with customID: %s for user %s", customID, i.Member.User.ID)
 
-	// Immediately defer response to prevent timeout
-	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-	}); err != nil {
-		log.Printf("reminder: Failed to defer button response for user %s: %v", i.Member.User.ID, err)
-		return
-	}
-
 	if !strings.HasPrefix(customID, "reminder-") {
 		log.Printf("Invalid button customID: %s for user %s", customID, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
@@ -44,6 +36,39 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 
 	id := strings.Join(parts[:3], "-") // reminder-YYYYMMDDHHMM-RAND
 	action := parts[3]
+
+	if action == "resend" {
+		m := generateModal("", ReminderInfo{})
+		if err := s.InteractionRespond(i.Interaction, m); err != nil {
+			log.Printf("Failed to REsend modal for user %s: %v", i.Member.User.ID, err)
+			return
+		} else {
+			log.Printf("REsent modal for user %s", i.Member.User.ID)
+			return
+		}
+
+	}
+
+	// Immediately defer response to prevent timeout
+	//must not come before modal resending
+	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+	}); err != nil {
+		log.Printf("reminder: Failed to defer button response for user %s: %v", i.Member.User.ID, err)
+		return
+	}
+
+	if action == "resendCancel" {
+		log.Printf("Malformed button customID: %s for user %s", customID, i.Member.User.ID)
+		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+			Content: "リマインダーの設定をキャンセルしました。",
+		})
+		if err != nil {
+			log.Printf("reminder: Failed to send malformed customID response: %v", err)
+		}
+		return
+	}
+
 	info, err := repository.Load(id)
 	if err != nil {
 		log.Printf("No reminder data found for customID: %s for user %s", id, i.Member.User.ID)

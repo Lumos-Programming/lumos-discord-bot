@@ -1,11 +1,10 @@
 package reminder
 
 import (
-	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"log"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -28,38 +27,25 @@ type ReminderInfoExec struct {
 }
 
 func (r ReminderInfo) validate() (time.Time, time.Time, error) {
-	var errMsgs []string
+	log.Printf("Entering validation")
 	var TimeOfEvTime time.Time
-	var DurationOfStTime time.Duration
 	var TimeOfTrTime time.Time
 	var parseErr error
+	jst, _ := time.LoadLocation("Asia/Tokyo")
 
-	// Validate eventYear
-	if err := validateEventYear(r.eventYear); err != nil {
-		errMsgs = append(errMsgs, "開催年は4桁の数字で、今年以降にしてください")
-	}
-
-	// Validate eventTime
-	if err := validateEventTime(r.eventTime); err != nil {
-		errMsgs = append(errMsgs, "開催日時は8桁の数字 (MMDDHHmm) で，有効な月・日・時・分の値にしてください")
-	}
-
-	// Validate and caliculate setTime
-	DurationOfStTime, parseErr = parseCustomDuration(r.setTime)
+	TimeOfEvTime, TimeOfTrTime, parseErr = parseEventtime(r)
 	if parseErr != nil {
-		errMsgs = append(errMsgs, "リマインダーのタイミングは '1w2d3h4m' 形式にしてください")
+		log.Println("validationErr: parseErr")
+		return time.Time{}, time.Time{}, parseErr
+	} else {
+		if !(TimeOfEvTime.After(time.Now().In(jst))) {
+			log.Println("validationErr: valueErr")
+			return time.Time{}, time.Time{}, fmt.Errorf("・イベントの日時は未来の日時を指定してください")
+		} else {
+			log.Println("validated")
+			return TimeOfEvTime, TimeOfTrTime, nil
+		}
 	}
-
-	if len(errMsgs) != 0 {
-		err := strings.Join(errMsgs, ", ")
-		return time.Time{}, time.Time{}, errors.New(err)
-	}
-
-	//caliculate EventTime TriggerTime
-	TimeOfEvTime, _ = invertEventTime(r.eventYear, r.eventTime)
-	TimeOfTrTime = TimeOfEvTime.Add(-1 * DurationOfStTime)
-
-	return TimeOfEvTime, TimeOfTrTime, nil
 }
 
 func (r ReminderInfo) generateCustomID() string {
