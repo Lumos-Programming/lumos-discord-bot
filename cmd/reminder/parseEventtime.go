@@ -79,7 +79,7 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 	var err error
 	timeOfEvTime, err = time.ParseInLocation("200601021504", r.eventYear+r.eventTime, jst)
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("failed to parse eventTime:%v", err)
 		return time.Time{}, time.Time{}, errors.New(strings.Join(errMsgs, "\n"))
 	}
 
