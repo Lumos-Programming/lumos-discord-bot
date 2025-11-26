@@ -28,7 +28,7 @@ type ReminderRepository struct {
 	reminderStatus sync.Map
 }
 
-func (r *ReminderRepository) HoldInfo(key string, data ReminderInfo) {
+func (r *ReminderRepository) HoldInfo(key string, data ReminderInfoExec) {
 	r.reminders.Store(key, data)
 }
 
@@ -36,11 +36,11 @@ func (r *ReminderRepository) StoreInfo(key string, data ReminderInfoExec) {
 	r.reminderStatus.Store(key, data)
 }
 
-func (r *ReminderRepository) Load(key string) (ReminderInfo, error) {
+func (r *ReminderRepository) Load(key string) (ReminderInfoExec, error) {
 	if v, ok := r.reminders.Load(key); ok {
-		return v.(ReminderInfo), nil
+		return v.(ReminderInfoExec), nil
 	}
-	return ReminderInfo{}, fmt.Errorf("not found")
+	return ReminderInfoExec{}, fmt.Errorf("not found")
 }
 
 type ReminderCmd struct{}
