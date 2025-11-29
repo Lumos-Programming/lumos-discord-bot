@@ -2,8 +2,9 @@ package handler
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type WelcomeHandler struct {
@@ -23,6 +24,9 @@ func NewWelcomeHandler(targetServer, channel, memberRoleID, testUserID string) W
 }
 
 func (h WelcomeHandler) Handle(s *discordgo.Session, i *discordgo.GuildMemberAdd) {
+	if i.GuildID != h.targetServer {
+		return
+	}
 	if i.User.ID != h.testUserID {
 		h.sendWelcomeGreetingServer(s, *i.User)
 	} else {
