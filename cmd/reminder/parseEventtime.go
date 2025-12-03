@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error, []int) {
+func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 	var errMsgs []string
 	var timeOfEvTime time.Time
 	var timeOfTrTime time.Time
@@ -18,7 +18,7 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 	if r.eventYear != "" {
 		if len(r.eventYear) != 4 || !isAllDigits(r.eventYear) {
 			errMsgs = append(errMsgs, "・開催年は4桁の数字にしてください")
-			errCode[0] = 1
+			r.errCode[0] = 1
 			log.Printf("errCode[0]=1 in parseEventtime()-1")
 		}
 	} else {
@@ -28,7 +28,7 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 	//format check: eventTime
 	if len(r.eventTime) != 8 || !isAllDigits(r.eventTime) {
 		errMsgs = append(errMsgs, "・開催日時は8桁の数字 (MMDDHHmm)にしてください")
-		errCode[1] = 1
+		r.errCode[1] = 1
 		log.Printf("errCode[1]=1 in parseEventtime()-2")
 	} else {
 		monthInput, _ := strconv.Atoi(r.eventTime[:2])
@@ -40,7 +40,7 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 			hourInput < 0 || hourInput > 23 ||
 			minuteInput < 0 || minuteInput > 59 {
 			errMsgs = append(errMsgs, "・開催日時は有効な月・日・時・分の値にしてください")
-			errCode[1] = 1
+			r.errCode[1] = 1
 			log.Printf("errCode[1]=1 in parseEventtime()-3")
 		}
 	}
@@ -59,13 +59,13 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 		}
 		if i == len(r.setTime) {
 			errMsgs = append(errMsgs, "・リマインダーのタイミングの単位を指定してください")
-			errCode[2] = 1
+			r.errCode[2] = 1
 			log.Printf("errCode[2]=1 in parseEventtime()-4")
 			break
 		}
 		if !lastWasDigit {
 			errMsgs = append(errMsgs, "・リマインダーのタイミングの単位の前には数字を入力してください")
-			errCode[2] = 1
+			r.errCode[2] = 1
 			log.Printf("errCode[2]=1 in parseEventtime()-5")
 			break
 		}
@@ -82,7 +82,7 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 			d += time.Duration(num) * aMinute
 		default:
 			errMsgs = append(errMsgs, "・リマインダーのタイミングの単位はw,d,h,mのいずれかにしてください")
-			errCode[2] = 1
+			r.errCode[2] = 1
 			log.Printf("errCode[2]=1 in parseEventtime()-6")
 		}
 	}
@@ -93,13 +93,13 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 		timeOfEvTime, err = time.ParseInLocation("200601021504", r.eventYear+r.eventTime, jst)
 		if err != nil {
 			log.Printf("failed to parse eventTime:%v", err)
-			errCode[0] = 1
+			r.errCode[0] = 1
 			log.Printf("errCode[0]=1 in parseEventtime()-7")
-			errCode[1] = 1
+			r.errCode[1] = 1
 			log.Printf("errCode[1]=1 in parseEventtime()-8")
-			errCode[2] = 1
+			r.errCode[2] = 1
 			log.Printf("errCode[2]=1 in parseEventtime()-9")
-			return time.Time{}, time.Time{}, errors.New(strings.Join(errMsgs, "\n")), errCode
+			return time.Time{}, time.Time{}, errors.New(strings.Join(errMsgs, "\n"))
 		}
 	}
 
@@ -107,7 +107,7 @@ func parseEventtime(r ReminderInfo, errCode []int) (time.Time, time.Time, error,
 	timeOfTrTime = timeOfEvTime.Add(-1 * d)
 
 	if len(errMsgs) != 0 {
-		return time.Time{}, time.Time{}, errors.New(strings.Join(errMsgs, "\n")), errCode
+		return time.Time{}, time.Time{}, errors.New(strings.Join(errMsgs, "\n"))
 	}
-	return timeOfEvTime, timeOfTrTime, nil, errCode
+	return timeOfEvTime, timeOfTrTime, nil
 }

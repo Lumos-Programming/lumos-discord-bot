@@ -15,6 +15,10 @@ func Test_parseEventtime(t *testing.T) {
 	thisday := time.Now().In(jst).Day()
 	thishour := time.Now().In(jst).Hour()
 	thisminute := time.Now().In(jst).Minute()
+	f_thismonth := time.Now().In(jst).Format("01")
+	f_thisday := time.Now().In(jst).Format("02")
+	f_thishour := time.Now().In(jst).Format("15")
+	f_thisminute := time.Now().In(jst).Format("04")
 	type args struct {
 		r ReminderInfo
 	}
@@ -33,6 +37,8 @@ func Test_parseEventtime(t *testing.T) {
 					strconv.Itoa(thisyear),
 					"12312359",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			want:    time.Date(thisyear, time.December, 31, 23, 59, 0, 0, jst),
@@ -47,6 +53,8 @@ func Test_parseEventtime(t *testing.T) {
 					strconv.Itoa(nextyear),
 					"01051150",
 					"1h2d",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			want:    time.Date(nextyear, time.January, 5, 11, 50, 0, 0, jst),
@@ -59,8 +67,10 @@ func Test_parseEventtime(t *testing.T) {
 				r: ReminderInfo{
 					"test: now",
 					strconv.Itoa(thisyear),
-					strconv.Itoa(thismonth) + strconv.Itoa(thisday) + strconv.Itoa(thishour) + strconv.Itoa(thisminute),
+					f_thismonth + f_thisday + f_thishour + f_thisminute,
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			want:    time.Date(thisyear, time.Month(thismonth), thisday, thishour, thisminute, 0, 0, jst),
@@ -75,6 +85,8 @@ func Test_parseEventtime(t *testing.T) {
 					"23344",
 					"12312359",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -87,6 +99,8 @@ func Test_parseEventtime(t *testing.T) {
 					"a112",
 					"12312359",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -99,6 +113,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"1234567",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -111,6 +127,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"abcd1234",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -123,6 +141,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"13312359",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -135,6 +155,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"12312359",
 					"1h3",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -147,6 +169,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"12312359",
 					"1wd",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -159,6 +183,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"12312359",
 					"1u",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,
@@ -172,6 +198,8 @@ func Test_parseEventtime(t *testing.T) {
 					"2000",
 					"02311230",
 					"1h",
+					[]int{0, 0, 0},
+					"",
 				},
 			},
 			wantErr: true,

@@ -28,29 +28,28 @@ type ReminderInfoExec struct {
 	executed    bool
 }
 
-func (r ReminderInfo) validate() (time.Time, time.Time, error, []int) {
+func (r ReminderInfo) validate() (time.Time, time.Time, error) {
 	log.Printf("Entering validation")
 	var TimeOfEvTime time.Time
 	var TimeOfTrTime time.Time
 	var parseErr error
-	errCode := make([]int, 3) //eventYear, eventTime, setTimeのどこにエラーがあるか
 	jst, _ := time.LoadLocation("Asia/Tokyo")
 
-	TimeOfEvTime, TimeOfTrTime, parseErr, errCode = parseEventtime(r, errCode)
+	TimeOfEvTime, TimeOfTrTime, parseErr = parseEventtime(r)
 	if parseErr != nil {
-		log.Println("validationErr: parseErr")
-		return time.Time{}, time.Time{}, parseErr, errCode
+		log.Printf("validationErr: parseErr with errCode%v", r.errCode)
+		return time.Time{}, time.Time{}, parseErr
 	} else {
 		if !(TimeOfEvTime.After(time.Now().In(jst))) {
-			log.Println("validationErr: valueErr")
-			errCode[0] = 1
+			r.errCode[0] = 1
 			log.Printf("errCode[0]=1 in validate()-1")
-			errCode[1] = 1
+			r.errCode[1] = 1
 			log.Printf("errCode[1]=1 in validate()-2")
-			return time.Time{}, time.Time{}, fmt.Errorf("・イベントの日時は未来の日時を指定してください"), errCode
+			log.Printf("validationErr: valueErr with errCode%v", r.errCode)
+			return time.Time{}, time.Time{}, fmt.Errorf("・イベントの日時は未来の日時を指定してください")
 		} else {
 			log.Println("validated")
-			return TimeOfEvTime, TimeOfTrTime, nil, errCode
+			return TimeOfEvTime, TimeOfTrTime, nil
 		}
 	}
 }

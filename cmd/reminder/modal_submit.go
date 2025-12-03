@@ -42,10 +42,13 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 			}
 		}
 	}
+	rmdInfo.errCode = []int{0, 0, 0}
+	rmdInfo.errMsg = ""
 
 	// Validate and caliculate input
 	rmdInfoExec.title = rmdInfo.title
-	rmdInfoExec.eventTime, rmdInfoExec.triggerTime, validErr, rmdInfo.errCode = rmdInfo.validate()
+	rmdInfoExec.eventTime, rmdInfoExec.triggerTime, validErr = rmdInfo.validate()
+	log.Printf("returned to modal_submit: finish validate with errCode%v", rmdInfo.errCode)
 	if validErr != nil {
 		rmdInfo.errMsg = validErr.Error()
 	} else {
