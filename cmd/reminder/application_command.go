@@ -11,27 +11,20 @@ func (n *ReminderCmd) handleApplicationCommand(s *discordgo.Session, i *discordg
 	m := generateModal(ReminderInfo{})
 	if err := s.InteractionRespond(i.Interaction, m); err != nil {
 		log.Printf("reminder: Failed to send modal for user %s: %v", i.Member.User.ID, err)
-	} else {
-		log.Printf("Sent modal for user %s", i.Member.User.ID)
 	}
-
 }
 
 func generateModal(prevInfo ReminderInfo) *discordgo.InteractionResponse {
 	modalTitle := "大切なイベントのリマインダーを設定しましょう!"
 	if prevInfo.errMsg != "" {
-		log.Printf("Resent: enter resetting with %v", prevInfo.errCode)
 		if prevInfo.errCode[0] == 1 {
 			prevInfo.eventYear = ""
-			log.Printf("REsent: reset eventYear")
 		}
 		if prevInfo.errCode[1] == 1 {
 			prevInfo.eventTime = ""
-			log.Printf("REsent: reset eventTime")
 		}
 		if prevInfo.errCode[2] == 1 {
 			prevInfo.setTime = ""
-			log.Printf("REsent: reset setTime")
 		}
 	}
 

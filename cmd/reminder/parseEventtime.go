@@ -2,7 +2,6 @@ package reminder
 
 import (
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -19,7 +18,6 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 		if len(r.eventYear) != 4 || !isAllDigits(r.eventYear) {
 			errMsgs = append(errMsgs, "・開催年は4桁の数字にしてください")
 			r.errCode[0] = 1
-			log.Printf("errCode[0]=1 in parseEventtime()-1")
 		}
 	} else {
 		r.eventYear = strconv.Itoa(time.Now().In(jst).Year())
@@ -29,7 +27,6 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 	if len(r.eventTime) != 8 || !isAllDigits(r.eventTime) {
 		errMsgs = append(errMsgs, "・開催日時は8桁の数字 (MMDDHHmm)にしてください")
 		r.errCode[1] = 1
-		log.Printf("errCode[1]=1 in parseEventtime()-2")
 	} else {
 		monthInput, _ := strconv.Atoi(r.eventTime[:2])
 		dayInput, _ := strconv.Atoi(r.eventTime[2:4])
@@ -41,7 +38,6 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 			minuteInput < 0 || minuteInput > 59 {
 			errMsgs = append(errMsgs, "・開催日時は有効な月・日・時・分の値にしてください")
 			r.errCode[1] = 1
-			log.Printf("errCode[1]=1 in parseEventtime()-3")
 		}
 	}
 
@@ -60,13 +56,11 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 		if i == len(r.setTime) {
 			errMsgs = append(errMsgs, "・リマインダーのタイミングの単位を指定してください")
 			r.errCode[2] = 1
-			log.Printf("errCode[2]=1 in parseEventtime()-4")
 			break
 		}
 		if !lastWasDigit {
 			errMsgs = append(errMsgs, "・リマインダーのタイミングの単位の前には数字を入力してください")
 			r.errCode[2] = 1
-			log.Printf("errCode[2]=1 in parseEventtime()-5")
 			break
 		}
 		unit := r.setTime[i]
@@ -83,7 +77,6 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 		default:
 			errMsgs = append(errMsgs, "・リマインダーのタイミングの単位はw,d,h,mのいずれかにしてください")
 			r.errCode[2] = 1
-			log.Printf("errCode[2]=1 in parseEventtime()-6")
 		}
 	}
 
@@ -92,13 +85,9 @@ func parseEventtime(r ReminderInfo) (time.Time, time.Time, error) {
 		var err error
 		timeOfEvTime, err = time.ParseInLocation("200601021504", r.eventYear+r.eventTime, jst)
 		if err != nil {
-			log.Printf("failed to parse eventTime:%v", err)
 			r.errCode[0] = 1
-			log.Printf("errCode[0]=1 in parseEventtime()-7")
 			r.errCode[1] = 1
-			log.Printf("errCode[1]=1 in parseEventtime()-8")
 			r.errCode[2] = 1
-			log.Printf("errCode[2]=1 in parseEventtime()-9")
 			return time.Time{}, time.Time{}, errors.New(strings.Join(errMsgs, "\n"))
 		}
 	}

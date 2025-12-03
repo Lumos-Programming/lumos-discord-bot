@@ -3,7 +3,6 @@ package reminder
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -29,7 +28,6 @@ type ReminderInfoExec struct {
 }
 
 func (r ReminderInfo) validate() (time.Time, time.Time, error) {
-	log.Printf("Entering validation")
 	var TimeOfEvTime time.Time
 	var TimeOfTrTime time.Time
 	var parseErr error
@@ -37,18 +35,13 @@ func (r ReminderInfo) validate() (time.Time, time.Time, error) {
 
 	TimeOfEvTime, TimeOfTrTime, parseErr = parseEventtime(r)
 	if parseErr != nil {
-		log.Printf("validationErr: parseErr with errCode%v", r.errCode)
 		return time.Time{}, time.Time{}, parseErr
 	} else {
 		if !(TimeOfEvTime.After(time.Now().In(jst))) {
 			r.errCode[0] = 1
-			log.Printf("errCode[0]=1 in validate()-1")
 			r.errCode[1] = 1
-			log.Printf("errCode[1]=1 in validate()-2")
-			log.Printf("validationErr: valueErr with errCode%v", r.errCode)
 			return time.Time{}, time.Time{}, fmt.Errorf("・イベントの日時は未来の日時を指定してください")
 		} else {
-			log.Println("validated")
 			return TimeOfEvTime, TimeOfTrTime, nil
 		}
 	}
