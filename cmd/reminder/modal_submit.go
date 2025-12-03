@@ -15,11 +15,12 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 		log.Printf("Invalid modal customID: %s for user %s", i.ModalSubmitData().CustomID, i.Member.User.ID)
 		return
 	}
-	log.Printf("Processing modal submit for user %s", i.Member.User.ID)
 
 	var rmdInfo ReminderInfo
 	var rmdInfoExec ReminderInfoExec
 	var validErr error
+
+	//input from user
 	for _, cmp := range i.ModalSubmitData().Components {
 		row := cmp.(*discordgo.ActionsRow)
 		for _, inner := range row.Components {
@@ -40,10 +41,17 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 			}
 		}
 	}
+	rmdInfo.errCode = []int{0, 0, 0}
+	rmdInfo.errMsg = ""
 
 	// Validate and caliculate input
 	rmdInfoExec.title = rmdInfo.title
 	rmdInfoExec.eventTime, rmdInfoExec.triggerTime, validErr = rmdInfo.validate()
+	if validErr != nil {
+		rmdInfo.errMsg = validErr.Error()
+	} else {
+		rmdInfo.errMsg = ""
+	}
 	rmdInfoExec.UserName = i.Member.Nick
 	if rmdInfoExec.UserName == "" {
 		rmdInfoExec.UserName = i.Member.User.GlobalName
@@ -58,12 +66,11 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 
 	// Generate custom ID
 	customID := rmdInfo.generateCustomID()
+	repository.PreHoldInfo(customID, rmdInfo)
 
 	//Send error message and request correction
 	if validErr != nil {
-		errorMsg := validErr.Error()
-		log.Printf("Validation failed for user %s: %s", i.Member.User.ID, errorMsg)
-		embed := n.errorMessageEmbed(errorMsg)
+		embed := n.errorMessageEmbed(rmdInfo.errMsg)
 		resendButton := discordgo.Button{
 			Label:    "再入力",
 			Style:    discordgo.PrimaryButton,
@@ -86,14 +93,12 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 			},
 		}); err != nil {
 			log.Printf("reminder: Failed to send error message for user %s: %v", i.Member.User.ID, err)
-		} else {
-			log.Printf("Sent error message with buttons for user %s", i.Member.User.ID)
 		}
 		return
 	}
 
+	repository.remindersInput.Delete(customID)
 	repository.HoldInfo(customID, rmdInfoExec)
-	log.Printf("Stored reminder with customID: %s for user %s", customID, i.Member.User.ID)
 
 	// Send confirmation message with buttons
 	embed := n.confirmEmbed(rmdInfoExec, i)
@@ -119,10 +124,7 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 		},
 	}); err != nil {
 		log.Printf("reminder: Failed to send confirmation message for user %s: %v", i.Member.User.ID, err)
-	} else {
-		log.Printf("Sent confirmation message with buttons for user %s", i.Member.User.ID)
 	}
-
 }
 
 func (n *ReminderCmd) errorMessageEmbed(errMsg string) *discordgo.MessageEmbed {

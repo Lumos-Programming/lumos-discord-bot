@@ -8,21 +8,23 @@ import (
 
 func (n *ReminderCmd) handleApplicationCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	log.Printf("Processing /reminder command for user %s", i.Member.User.ID)
-	m := generateModal("", ReminderInfo{})
+	m := generateModal(ReminderInfo{})
 	if err := s.InteractionRespond(i.Interaction, m); err != nil {
 		log.Printf("reminder: Failed to send modal for user %s: %v", i.Member.User.ID, err)
-	} else {
-		log.Printf("Sent modal for user %s", i.Member.User.ID)
 	}
-
 }
 
-func generateModal(errorMsg string, prevInfo ReminderInfo) *discordgo.InteractionResponse {
+func generateModal(prevInfo ReminderInfo) *discordgo.InteractionResponse {
 	modalTitle := "大切なイベントのリマインダーを設定しましょう!"
-	if errorMsg != "" {
-		modalTitle = errorMsg
-		if len(modalTitle) > 45 { // Discord modal title limit
-			modalTitle = modalTitle[:42] + "..."
+	if prevInfo.errMsg != "" {
+		if prevInfo.errCode[0] == 1 {
+			prevInfo.eventYear = ""
+		}
+		if prevInfo.errCode[1] == 1 {
+			prevInfo.eventTime = ""
+		}
+		if prevInfo.errCode[2] == 1 {
+			prevInfo.setTime = ""
 		}
 	}
 

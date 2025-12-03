@@ -9,7 +9,6 @@ import (
 
 func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	customID := i.MessageComponentData().CustomID
-	log.Printf("Processing button interaction with customID: %s for user %s", customID, i.Member.User.ID)
 
 	if !strings.HasPrefix(customID, "reminder-") {
 		log.Printf("Invalid button customID: %s for user %s", customID, i.Member.User.ID)
@@ -24,7 +23,6 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 
 	parts := strings.Split(customID, "-")
 	if len(parts) != 4 {
-		log.Printf("Malformed button customID: %s for user %s", customID, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "エラー：無効なボタン操作です。2",
 		})
@@ -38,15 +36,23 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 	action := parts[3]
 
 	if action == "resend" {
-		m := generateModal("", ReminderInfo{})
+		info, err := repository.PreLoad(id)
+		if err != nil {
+			log.Printf("No reminder data found for customID from reminderInfo: %s for user %s", id, i.Member.User.ID)
+			_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+				Content: "エラー：リマインダーデータが見つかりません。",
+			})
+			if err != nil {
+				log.Printf("reminderInfo: Failed to send missing data response: %v", err)
+			}
+			return
+		}
+		repository.remindersInput.Delete(id)
+		m := generateModal(info)
 		if err := s.InteractionRespond(i.Interaction, m); err != nil {
 			log.Printf("Failed to REsend modal for user %s: %v", i.Member.User.ID, err)
 			return
-		} else {
-			log.Printf("REsent modal for user %s", i.Member.User.ID)
-			return
 		}
-
 	}
 
 	// Immediately defer response to prevent timeout
@@ -69,14 +75,14 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 		return
 	}
 
-	info, err := repository.Load(id)
+	infoExec, err := repository.Load(id)
 	if err != nil {
-		log.Printf("No reminder data found for customID: %s for user %s", id, i.Member.User.ID)
+		log.Printf("No reminder data found for customID from reminderInfoExec: %s for user %s", id, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 			Content: "エラー：リマインダーデータが見つかりません。",
 		})
 		if err != nil {
-			log.Printf("reminder: Failed to send missing data response: %v", err)
+			log.Printf("reminderInfoExec: Failed to send missing data response: %v", err)
 		}
 		return
 	}
@@ -85,14 +91,11 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 	if action == "cancel" {
 		repository.reminders.Delete(id)
 		response = "リマインダーの設定をキャンセルしました。"
-		log.Printf("Cancelled reminder with customID: %s for user %s", id, i.Member.User.ID)
 	} else if action == "confirm" {
 		// Simulate DB save (log for now as DB is not ready)
-		log.Printf("Saving to DB for user %s: {title:%s eventTime:%s triggerTime:%s executed:%t}", i.Member.User.ID, info.title, info.eventTime.String(), info.triggerTime.String(), info.executed)
-		repository.StoreInfo(id, info)
+		repository.StoreInfo(id, infoExec)
 		repository.reminders.Delete(id)
 		response = "リマインダーを確定しました。"
-		log.Printf("Confirmed reminder with customID: %s for user %s", id, i.Member.User.ID)
 	} else {
 		log.Printf("Unknown button action: %s for customID: %s for user %s", action, customID, i.Member.User.ID)
 		_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{

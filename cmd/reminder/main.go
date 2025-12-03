@@ -24,8 +24,20 @@ const (
 var repository ReminderRepository
 
 type ReminderRepository struct {
+	remindersInput sync.Map
 	reminders      sync.Map
 	reminderStatus sync.Map
+}
+
+func (r *ReminderRepository) PreHoldInfo(key string, data ReminderInfo) {
+	r.remindersInput.Store(key, data)
+}
+
+func (r *ReminderRepository) PreLoad(key string) (ReminderInfo, error) {
+	if v, ok := r.remindersInput.Load(key); ok {
+		return v.(ReminderInfo), nil
+	}
+	return ReminderInfo{}, fmt.Errorf("not found")
 }
 
 func (r *ReminderRepository) HoldInfo(key string, data ReminderInfoExec) {
