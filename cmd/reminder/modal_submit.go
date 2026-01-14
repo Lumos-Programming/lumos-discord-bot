@@ -61,7 +61,6 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 	}
 	rmdInfoExec.UserID = i.Member.User.ID
 	rmdInfoExec.ChannelID = i.ChannelID
-	rmdInfoExec.Session = s
 	rmdInfoExec.executed = false
 
 	// Generate custom ID
@@ -98,7 +97,17 @@ func (n *ReminderCmd) handleModalSubmit(s *discordgo.Session, i *discordgo.Inter
 	}
 
 	repository.remindersInput.Delete(customID)
-	repository.HoldInfo(customID, rmdInfoExec)
+	if err := repository.HoldInfo(customID, rmdInfoExec); err != nil {
+		log.Printf("reminder: Failed to persist reminder draft %s for user %s: %v", customID, i.Member.User.ID, err)
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "エラー：リマインダーの保存に失敗しました。もう一度お試しください。",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
 
 	// Send confirmation message with buttons
 	embed := n.confirmEmbed(rmdInfoExec, i)

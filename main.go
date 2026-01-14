@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"lumos-discord-bot/cmd"
@@ -53,6 +54,8 @@ func main() {
 
 	// setup commands...
 	cmds := cmd.NewExec()
+	reminder.SetDiscordSender(bot)
+	reminder.InitReminderStoreFromEnv(context.Background())
 
 	noxCmd := nox.NewNoxCmd()
 	cmds.Add(noxCmd)

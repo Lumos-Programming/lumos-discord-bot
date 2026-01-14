@@ -89,12 +89,22 @@ func (n *ReminderCmd) handleMessageComponent(s *discordgo.Session, i *discordgo.
 
 	var response string
 	if action == "cancel" {
-		repository.reminders.Delete(id)
+		if err := repository.DeleteDraft(id); err != nil {
+			log.Printf("reminder: Failed to cancel reminder %s for user %s: %v", id, i.Member.User.ID, err)
+			_, _ = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+				Content: "エラー：リマインダーのキャンセルに失敗しました。",
+			})
+			return
+		}
 		response = "リマインダーの設定をキャンセルしました。"
 	} else if action == "confirm" {
-		// Simulate DB save (log for now as DB is not ready)
-		repository.StoreInfo(id, infoExec)
-		repository.reminders.Delete(id)
+		if err := repository.StoreInfo(id, infoExec); err != nil {
+			log.Printf("reminder: Failed to confirm reminder %s for user %s: %v", id, i.Member.User.ID, err)
+			_, _ = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+				Content: "エラー：リマインダーの確定に失敗しました。",
+			})
+			return
+		}
 		response = "リマインダーを確定しました。"
 	} else {
 		log.Printf("Unknown button action: %s for customID: %s for user %s", action, customID, i.Member.User.ID)
