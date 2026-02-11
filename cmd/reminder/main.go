@@ -1,11 +1,13 @@
 package reminder
 
 import (
+	"context"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 const (
@@ -40,19 +42,45 @@ func (r *ReminderRepository) PreLoad(key string) (ReminderInfo, error) {
 	return ReminderInfo{}, fmt.Errorf("not found")
 }
 
-func (r *ReminderRepository) HoldInfo(key string, data ReminderInfoExec) {
+func (r *ReminderRepository) HoldInfo(key string, data ReminderInfoExec) error {
 	r.reminders.Store(key, data)
+	if s := GetReminderStore(); s != nil {
+		return s.UpsertDraft(context.Background(), key, data)
+	}
+	return nil
 }
 
-func (r *ReminderRepository) StoreInfo(key string, data ReminderInfoExec) {
-	r.reminderStatus.Store(key, data)
+func (r *ReminderRepository) StoreInfo(key string, data ReminderInfoExec) error {
+	s := GetReminderStore()
+	if s == nil {
+		r.reminderStatus.Store(key, data)
+		r.reminders.Delete(key)
+		return nil
+	}
+	if err := s.Confirm(context.Background(), key); err != nil {
+		return err
+	}
+	r.reminders.Delete(key)
+	return nil
 }
 
 func (r *ReminderRepository) Load(key string) (ReminderInfoExec, error) {
 	if v, ok := r.reminders.Load(key); ok {
 		return v.(ReminderInfoExec), nil
 	}
+	if s := GetReminderStore(); s != nil {
+		return s.Get(context.Background(), key)
+	}
 	return ReminderInfoExec{}, fmt.Errorf("not found")
+}
+
+func (r *ReminderRepository) DeleteDraft(key string) error {
+	r.reminders.Delete(key)
+	s := GetReminderStore()
+	if s == nil {
+		return nil
+	}
+	return s.Delete(context.Background(), key)
 }
 
 type ReminderCmd struct{}
