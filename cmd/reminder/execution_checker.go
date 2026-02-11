@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	executionInterval = 10
+	executionIntervalSeconds = 10
+	dueReminderFetchLimit    = 50
 )
 
 func (r *ReminderInfoExec) ShouldRun() bool {
@@ -67,7 +68,7 @@ func (r *ReminderRepository) checkAndExecuteStore(ctx context.Context) {
 	jst, _ := time.LoadLocation("Asia/Tokyo")
 	now := time.Now().In(jst)
 
-	due, err := s.ListDueConfirmed(ctx, now, 50)
+	due, err := s.ListDueConfirmed(ctx, now, dueReminderFetchLimit)
 	if err != nil {
 		log.Printf("reminder: store query failed: %v", err)
 		return
@@ -90,11 +91,11 @@ func (r *ReminderRepository) checkAndExecuteStore(ctx context.Context) {
 func (r *ReminderRepository) RemindChecker() {
 	log.Printf("Started reminder executing checker")
 	go func() {
-		ticker := time.NewTicker(executionInterval * time.Second)
+		ticker := time.NewTicker(executionIntervalSeconds * time.Second)
 		defer ticker.Stop()
 		for {
 			<-ticker.C
-			log.Printf("%d seconds left", executionInterval)
+			log.Printf("%d seconds left", executionIntervalSeconds)
 			r.CheckAndExecute()
 		}
 	}()

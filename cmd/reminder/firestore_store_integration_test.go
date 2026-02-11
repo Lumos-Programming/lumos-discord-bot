@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+const (
+	emulatorDialTimeout       = 300 * time.Millisecond
+	integrationOperationLimit = 15 * time.Second
+	integrationEventLeadTime  = 10 * time.Minute
+	integrationTriggerOffset  = 1 * time.Minute
+	integrationDueQueryLimit  = 10
+)
+
 func TestFirestoreReminderStore_EmulatorLifecycle(t *testing.T) {
 	host := strings.TrimSpace(os.Getenv(envFirestoreEmulatorHost))
 	if host == "" {
@@ -22,7 +30,7 @@ func TestFirestoreReminderStore_EmulatorLifecycle(t *testing.T) {
 	}
 	t.Setenv(envFirestoreServiceAccountJSONFile, "")
 
-	conn, err := net.DialTimeout("tcp", host, 300*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", host, emulatorDialTimeout)
 	if err != nil {
 		t.Skipf("Firestore emulator not reachable at %s", host)
 	}
@@ -42,15 +50,15 @@ func TestFirestoreReminderStore_EmulatorLifecycle(t *testing.T) {
 
 	info := ReminderInfoExec{
 		title:       "integration",
-		eventTime:   now.Add(10 * time.Minute),
-		triggerTime: now.Add(-1 * time.Minute),
+		eventTime:   now.Add(integrationEventLeadTime),
+		triggerTime: now.Add(-integrationTriggerOffset),
 		UserName:    "tester",
 		UserID:      "u1",
 		ChannelID:   "c1",
 		executed:    false,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), integrationOperationLimit)
 	defer cancel()
 
 	if err := store.UpsertDraft(ctx, id, info); err != nil {
@@ -69,7 +77,7 @@ func TestFirestoreReminderStore_EmulatorLifecycle(t *testing.T) {
 		t.Fatalf("Confirm: %v", err)
 	}
 
-	due, err := store.ListDueConfirmed(ctx, now, 10)
+	due, err := store.ListDueConfirmed(ctx, now, integrationDueQueryLimit)
 	if err != nil {
 		t.Fatalf("ListDueConfirmed: %v", err)
 	}
@@ -81,7 +89,7 @@ func TestFirestoreReminderStore_EmulatorLifecycle(t *testing.T) {
 		t.Fatalf("MarkExecuted: %v", err)
 	}
 
-	due2, err := store.ListDueConfirmed(ctx, now, 10)
+	due2, err := store.ListDueConfirmed(ctx, now, integrationDueQueryLimit)
 	if err != nil {
 		t.Fatalf("ListDueConfirmed(2): %v", err)
 	}

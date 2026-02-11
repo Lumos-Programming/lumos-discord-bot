@@ -2,6 +2,7 @@ package reminder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -22,12 +23,20 @@ const (
 const (
 	reminderStateDraft     = "draft"
 	reminderStateConfirmed = "confirmed"
+	remindersCollection    = "reminders"
+	defaultEmulatorProject = "demo-test"
 )
 
 type firestoreReminderStore struct {
 	client     *firestore.Client
 	collection string
 	col        *firestore.CollectionRef
+}
+
+type firestoreEnvConfig struct {
+	projectID       string
+	credentialsFile string
+	emulatorHost    string
 }
 
 type reminderDoc struct {
@@ -58,40 +67,43 @@ func newFirestoreReminderStoreFromEnv(ctx context.Context) (*firestoreReminderSt
 		return nil, nil
 	}
 
-	projectID := strings.TrimSpace(os.Getenv(envFirestoreProjectID))
-	emulatorHost := strings.TrimSpace(os.Getenv(envFirestoreEmulatorHost))
-	credsFile := strings.TrimSpace(os.Getenv(envFirestoreServiceAccountJSONFile))
-
-	var client *firestore.Client
-	var err error
-	if emulatorHost != "" {
-		if projectID == "" {
-			projectID = "demo-test"
-		}
-		client, err = firestore.NewClient(ctx, projectID, option.WithoutAuthentication())
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if projectID == "" {
-			return nil, fmt.Errorf("%s is required", envFirestoreProjectID)
-		}
-		if credsFile == "" {
-			return nil, fmt.Errorf("Firestore credentials are required; set %s", envFirestoreServiceAccountJSONFile)
-		}
-		client, err = firestore.NewClient(ctx, projectID, option.WithCredentialsFile(credsFile))
-		if err != nil {
-			return nil, err
-		}
+	cfg := loadFirestoreEnvConfig()
+	client, err := newFirestoreClient(ctx, cfg)
+	if err != nil {
+		return nil, err
 	}
-
-	collection := "reminders"
 
 	return &firestoreReminderStore{
 		client:     client,
-		collection: collection,
-		col:        client.Collection(collection),
+		collection: remindersCollection,
+		col:        client.Collection(remindersCollection),
 	}, nil
+}
+
+func loadFirestoreEnvConfig() firestoreEnvConfig {
+	return firestoreEnvConfig{
+		projectID:       strings.TrimSpace(os.Getenv(envFirestoreProjectID)),
+		credentialsFile: strings.TrimSpace(os.Getenv(envFirestoreServiceAccountJSONFile)),
+		emulatorHost:    strings.TrimSpace(os.Getenv(envFirestoreEmulatorHost)),
+	}
+}
+
+func newFirestoreClient(ctx context.Context, cfg firestoreEnvConfig) (*firestore.Client, error) {
+	if cfg.emulatorHost != "" {
+		if cfg.projectID == "" {
+			cfg.projectID = defaultEmulatorProject
+		}
+		return firestore.NewClient(ctx, cfg.projectID, option.WithoutAuthentication())
+	}
+
+	if cfg.projectID == "" {
+		return nil, fmt.Errorf("%s is required", envFirestoreProjectID)
+	}
+	if cfg.credentialsFile == "" {
+		return nil, fmt.Errorf("Firestore credentials are required; set %s", envFirestoreServiceAccountJSONFile)
+	}
+
+	return firestore.NewClient(ctx, cfg.projectID, option.WithCredentialsFile(cfg.credentialsFile))
 }
 
 func (s *firestoreReminderStore) Close() error {
@@ -157,7 +169,7 @@ func (s *firestoreReminderStore) ListDueConfirmed(ctx context.Context, now time.
 	for {
 		snap, err := iter.Next()
 		if err != nil {
-			if err == iterator.Done {
+			if errors.Is(err, iterator.Done) {
 				break
 			}
 			return nil, err
