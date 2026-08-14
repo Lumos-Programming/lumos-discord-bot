@@ -2,7 +2,6 @@ package reminder
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"math/rand"
 	"time"
 )
@@ -23,7 +22,6 @@ type ReminderInfoExec struct {
 	UserName    string
 	UserID      string
 	ChannelID   string
-	Session     *discordgo.Session
 	executed    bool
 }
 
