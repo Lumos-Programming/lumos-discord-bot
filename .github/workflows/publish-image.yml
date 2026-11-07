@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format repo slug
-        uses: actions/github-script@v4
+        uses: actions/github-script@v9
         id: repo_slug
         with:
           result-encoding: string
